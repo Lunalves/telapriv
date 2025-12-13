@@ -349,13 +349,16 @@ const PushinPayReal = {
 
         const data = await response.json();
         const transactionData = data.data || data;
-        let status = transactionData.status?.toLowerCase();
+        // Verificar status no nível raiz primeiro (data.status), depois dentro de transactionData
+        let status = (data.status || transactionData.status)?.toLowerCase();
         
         if (!status || status === 'unknown') {
           status = 'pending';
         }
         
+        console.log('📊 Resposta completa da API:', data);
         console.log('📊 Status do pagamento PushinPay:', status);
+        console.log('📊 TransactionData:', transactionData);
 
         const isPagamentoConfirmado = status === 'paid' || status === 'approved' || status === 'confirmed';
 

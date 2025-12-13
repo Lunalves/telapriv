@@ -9,7 +9,7 @@ export default function Home() {
   const [pixelId, setPixelId] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
   const [activeTab, setActiveTab] = useState('posts');
-  const [currentValue, setCurrentValue] = useState(19.90);
+  const [currentValue, setCurrentValue] = useState(1.00);
   const [currentPlan, setCurrentPlan] = useState('Mensal');
   const [imageVersion, setImageVersion] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -278,9 +278,9 @@ export default function Home() {
           <div className="mt-3">
             <h6 className="text-lg font-bold text-gray-800 mb-2">Assinaturas</h6>
             
-            <button onClick={() => handlePayment(19.90, 'Mensal')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all mb-2 flex justify-between items-center shadow-sm">
+            <button onClick={() => handlePayment(1.00, 'Mensal')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all mb-2 flex justify-between items-center shadow-sm">
               <span>Mensal</span>
-              <span>R$ 19,90</span>
+              <span>R$ 1,00</span>
             </button>
           </div>
           
@@ -460,7 +460,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <button onClick={() => handlePayment(19.90, 'Mensal')} className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 transition-all">
+              <button onClick={() => handlePayment(1.00, 'Mensal')} className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 transition-all">
                 🔒 Desbloquear todas as mídias
               </button>
             </div>
