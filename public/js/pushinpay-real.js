@@ -299,149 +299,152 @@ const PushinPayReal = {
     let tentativas = 0;
     const maxTentativas = 300;
     let ultimaConsulta = 0;
-    let primeiraVerificacao = true;
 
-    // Delay inicial de 5 segundos para dar tempo da transação aparecer na API
+    // Delay inicial de 5 segundos ANTES de iniciar o intervalo
+    console.log('⏳ Aguardando 5s antes de iniciar verificação...');
+    
     setTimeout(() => {
-      primeiraVerificacao = false;
-    }, 5000);
+      console.log('✅ Iniciando verificação automática após delay inicial');
+      
+      this.estado.intervaloVerificacao = setInterval(async () => {
+        tentativas++;
 
-    this.estado.intervaloVerificacao = setInterval(async () => {
-      tentativas++;
+        const agora = Date.now();
+        const tempoDesdeUltimaConsulta = agora - ultimaConsulta;
+        const intervaloMinimo = 10000; // 10 segundos entre consultas
 
-      const agora = Date.now();
-      const tempoDesdeUltimaConsulta = agora - ultimaConsulta;
-      const intervaloMinimo = primeiraVerificacao ? 5000 : 10000; // 5s na primeira, depois 10s
-
-      if (tempoDesdeUltimaConsulta < intervaloMinimo && ultimaConsulta > 0) {
-        const tempoRestante = intervaloMinimo - tempoDesdeUltimaConsulta;
-        console.log(`⏳ Aguardando ${Math.ceil(tempoRestante / 1000)}s antes da próxima consulta`);
-        return;
-      }
-
-      // Aguardar delay inicial antes da primeira verificação
-      if (primeiraVerificacao) {
-        console.log('⏳ Aguardando 5s para primeira verificação (transação pode demorar para aparecer na API)...');
-        return;
-      }
-
-      if (tentativas > maxTentativas) {
-        console.warn('⚠️ Limite de tentativas atingido. Parando verificação.');
-        this.pararVerificacao();
-        this.atualizarStatus('⏱️ Tempo de verificação expirado. Gere um novo QR Code.', true);
-        return;
-      }
-
-      ultimaConsulta = agora;
-      try {
-        const response = await fetch(`${this.config.baseUrl}/pushinpay`, {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: 'check-payment',
-            transactionId: this.estado.transactionId
-          })
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          
-          if (response.status === 404) {
-            // 404 é normal nas primeiras tentativas - a transação pode demorar para aparecer na API
-            if (tentativas <= 10) {
-              console.log(`⏳ Transação ainda não encontrada na API (tentativa ${tentativas}/10 - aguardando propagação)...`);
-            } else {
-              console.warn(`⚠️ Transação ainda não encontrada após ${tentativas} tentativas. Continuando verificação...`);
-            }
-            // Não retornar - continuar tentando
-            ultimaConsulta = Date.now();
-            return;
-          }
-          
-          console.error('Erro ao verificar pagamento:', {
-            status: response.status,
-            error: errorData.error || errorData.message || 'Erro desconhecido'
-          });
-          
-          // Para outros erros, também continuar tentando (pode ser temporário)
-          ultimaConsulta = Date.now();
+        if (tempoDesdeUltimaConsulta < intervaloMinimo && ultimaConsulta > 0) {
+          const tempoRestante = intervaloMinimo - tempoDesdeUltimaConsulta;
+          console.log(`⏳ Aguardando ${Math.ceil(tempoRestante / 1000)}s antes da próxima consulta`);
           return;
         }
 
-        const data = await response.json();
-        const transactionData = data.data || data;
-        // Verificar status no nível raiz primeiro (data.status), depois dentro de transactionData
-        let status = (data.status || transactionData.status)?.toLowerCase();
-        
-        if (!status || status === 'unknown') {
-          status = 'pending';
-        }
-        
-        console.log('📊 Resposta completa da API:', data);
-        console.log('📊 Status do pagamento PushinPay:', status);
-        console.log('📊 TransactionData:', transactionData);
-
-        const isPagamentoConfirmado = status === 'paid' || status === 'approved' || status === 'confirmed';
-
-        if (isPagamentoConfirmado) {
-          console.log('✅✅✅ PAGAMENTO CONFIRMADO! Redirecionando para agradecimento...');
-          this.atualizarStatus('✅ Pagamento confirmado! Liberando acesso...');
+        if (tentativas > maxTentativas) {
+          console.warn('⚠️ Limite de tentativas atingido. Parando verificação.');
           this.pararVerificacao();
+          this.atualizarStatus('⏱️ Tempo de verificação expirado. Gere um novo QR Code.', true);
+          return;
+        }
 
-          window.dispatchEvent(new CustomEvent('paymentConfirmed', {
-            detail: {
-              transactionId: this.estado.transactionId,
-              status: status,
-              value: transactionData.amount || this.estado.valorAtual / 100
-            }
-          }));
+        ultimaConsulta = agora;
+        try {
+          const response = await fetch(`${this.config.baseUrl}/pushinpay`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              action: 'check-payment',
+              transactionId: this.estado.transactionId
+            })
+          });
 
-          if (typeof fbq !== 'undefined') {
-            try {
-              fbq('track', 'Purchase', {
-                value: this.estado.valorAtual / 100,
-                currency: 'BRL',
-                content_name: this.config.planoAtual
-              });
-              console.log('✅ Facebook Pixel Purchase event enviado');
-            } catch (fbError) {
-              console.warn('⚠️ Erro ao enviar Facebook Pixel:', fbError);
+          // Verificar se é 404 da rota (não encontrada) ou da API
+          if (response.status === 404) {
+            const errorText = await response.text().catch(() => '');
+            console.error('❌ 404 - Rota não encontrada ou transação não existe:', errorText);
+            
+            // Se for 404 da rota (não da API), pode ser problema de deploy
+            if (errorText.includes('Transação não encontrada') || errorText.includes('transactionId')) {
+              // É 404 da API - transação ainda não existe
+              if (tentativas <= 10) {
+                console.log(`⏳ Transação ainda não encontrada na API (tentativa ${tentativas}/10 - aguardando propagação)...`);
+              } else {
+                console.warn(`⚠️ Transação ainda não encontrada após ${tentativas} tentativas. Continuando verificação...`);
+              }
+              ultimaConsulta = Date.now();
+              return;
+            } else {
+              // É 404 da rota - problema mais sério
+              console.error('❌ ERRO CRÍTICO: Rota /api/pushinpay não encontrada no servidor!');
+              this.atualizarStatus('❌ Erro: Rota não encontrada. Recarregue a página.', true);
+              this.pararVerificacao();
+              return;
             }
           }
 
-          const valorFormatado = (this.estado.valorAtual / 100).toFixed(2).replace('.', ',');
-          const urlParams = new URLSearchParams();
-          urlParams.set('id', this.estado.transactionId);
-          urlParams.set('valor', valorFormatado);
-          urlParams.set('status', status);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Erro ao verificar pagamento:', {
+              status: response.status,
+              error: errorData.error || errorData.message || 'Erro desconhecido'
+            });
+            ultimaConsulta = Date.now();
+            return;
+          }
 
-          this.atualizarStatus('🎉 Acesso liberado! Redirecionando...');
+          const data = await response.json();
+          const transactionData = data.data || data;
+          let status = (data.status || transactionData.status)?.toLowerCase();
+          
+          if (!status || status === 'unknown') {
+            status = 'pending';
+          }
+          
+          console.log('📊 Resposta completa da API:', data);
+          console.log('📊 Status do pagamento PushinPay:', status);
+          console.log('📊 TransactionData:', transactionData);
 
-          setTimeout(() => {
-            const urlAgradecimento = `/agradecimento?${urlParams.toString()}`;
-            console.log('🔄 Redirecionando para:', urlAgradecimento);
-            window.location.href = urlAgradecimento;
-          }, 1000);
+          const isPagamentoConfirmado = status === 'paid' || status === 'approved' || status === 'confirmed';
 
-        } else if (status === 'pending') {
-          console.log('⏳ Aguardando pagamento... Status: pending');
-        } else if (status === 'canceled' || status === 'cancelled') {
-          console.log('❌ Pagamento cancelado. Status:', status);
-          this.atualizarStatus('❌ Pagamento cancelado. Gere um novo QR Code.', true);
-          this.pararVerificacao();
-        } else {
-          console.log('⚠️ Status:', status, '- Continuando verificação...');
+          if (isPagamentoConfirmado) {
+            console.log('✅✅✅ PAGAMENTO CONFIRMADO! Redirecionando para agradecimento...');
+            this.atualizarStatus('✅ Pagamento confirmado! Liberando acesso...');
+            this.pararVerificacao();
+
+            window.dispatchEvent(new CustomEvent('paymentConfirmed', {
+              detail: {
+                transactionId: this.estado.transactionId,
+                status: status,
+                value: transactionData.amount || this.estado.valorAtual / 100
+              }
+            }));
+
+            if (typeof fbq !== 'undefined') {
+              try {
+                fbq('track', 'Purchase', {
+                  value: this.estado.valorAtual / 100,
+                  currency: 'BRL',
+                  content_name: this.config.planoAtual
+                });
+                console.log('✅ Facebook Pixel Purchase event enviado');
+              } catch (fbError) {
+                console.warn('⚠️ Erro ao enviar Facebook Pixel:', fbError);
+              }
+            }
+
+            const valorFormatado = (this.estado.valorAtual / 100).toFixed(2).replace('.', ',');
+            const urlParams = new URLSearchParams();
+            urlParams.set('id', this.estado.transactionId);
+            urlParams.set('valor', valorFormatado);
+            urlParams.set('status', status);
+
+            this.atualizarStatus('🎉 Acesso liberado! Redirecionando...');
+
+            setTimeout(() => {
+              const urlAgradecimento = `/agradecimento?${urlParams.toString()}`;
+              console.log('🔄 Redirecionando para:', urlAgradecimento);
+              window.location.href = urlAgradecimento;
+            }, 1000);
+
+          } else if (status === 'pending') {
+            console.log('⏳ Aguardando pagamento... Status: pending');
+          } else if (status === 'canceled' || status === 'cancelled') {
+            console.log('❌ Pagamento cancelado. Status:', status);
+            this.atualizarStatus('❌ Pagamento cancelado. Gere um novo QR Code.', true);
+            this.pararVerificacao();
+          } else {
+            console.log('⚠️ Status:', status, '- Continuando verificação...');
+          }
+        } catch (error) {
+          console.error('Erro ao verificar pagamento:', error);
+          ultimaConsulta = Date.now();
         }
-      } catch (error) {
-        console.error('Erro ao verificar pagamento:', error);
-        ultimaConsulta = Date.now();
-      }
-    }, 10000); // Verificar a cada 10 segundos
+      }, 10000); // Verificar a cada 10 segundos
 
-    console.log('✅ Verificação automática iniciada');
+      console.log('✅ Verificação automática iniciada');
+    }, 5000); // Delay inicial de 5 segundos
   },
 
   pararVerificacao() {
