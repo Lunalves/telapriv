@@ -16,7 +16,8 @@ const PushinPayReal = {
     qrCodeAtivo: false,
     intervaloVerificacao: null,
     valorAtual: 1990,
-    transactionId: null
+    transactionId: null,
+    possibleIds: null
   },
 
   atualizarValorPlano(valor, plano) {
@@ -120,10 +121,14 @@ const PushinPayReal = {
         console.warn('⚠️ Código PIX não encontrado na resposta da API');
       }
 
-      // Salvar hash/identifier da transação
+      // Salvar hash/identifier da transação e possíveis IDs
       if (identifier) {
         this.estado.transactionId = identifier;
+        this.estado.possibleIds = data.possibleIds || data.data?.possibleIds || null;
         console.log('✅ Transaction Hash salvo:', identifier);
+        if (this.estado.possibleIds) {
+          console.log('✅ Possíveis IDs salvos para consulta:', this.estado.possibleIds);
+        }
         // Iniciar verificação automática após criar PIX
         this.iniciarVerificacao();
       } else {
@@ -340,7 +345,8 @@ const PushinPayReal = {
             },
             body: JSON.stringify({
               action: 'check-payment',
-              transactionId: this.estado.transactionId
+              transactionId: this.estado.transactionId,
+              possibleIds: this.estado.possibleIds
             })
           });
 

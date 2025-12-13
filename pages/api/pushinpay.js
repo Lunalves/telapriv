@@ -122,6 +122,23 @@ export default async function handler(req, res) {
           });
         }
 
+        // Logs detalhados para debug
+        console.log('🔍 Campos disponíveis na resposta:', Object.keys(pixData));
+        console.log('🔍 ID da transação:', pixData.id);
+        const camposRelevantes = Object.keys(pixData).filter(k => 
+          k.toLowerCase().includes('id') || 
+          k.toLowerCase().includes('transaction') ||
+          k.toLowerCase().includes('uuid') ||
+          k.toLowerCase().includes('hash') ||
+          k.toLowerCase().includes('identifier')
+        );
+        console.log('🔍 Campos relacionados a ID/Transaction:', camposRelevantes);
+        if (camposRelevantes.length > 0) {
+          camposRelevantes.forEach(campo => {
+            console.log(`🔍 ${campo}:`, pixData[campo]);
+          });
+        }
+
         // Adaptar resposta para formato compatível com frontend
         // Documentação: { id, qr_code, status, value, qr_code_base64, ... }
         const adaptedResponse = {
@@ -135,7 +152,12 @@ export default async function handler(req, res) {
           payment_method: 'pix',
           expires_at: pixData.expires_at,
           created_at: pixData.created_at || new Date().toISOString(),
-          data: pixData
+          data: pixData,
+          // Incluir todos os campos possíveis de ID para consulta futura
+          possibleIds: camposRelevantes.reduce((acc, campo) => {
+            if (pixData[campo]) acc[campo] = pixData[campo];
+            return acc;
+          }, {})
         };
 
         console.log('✅ Transação criada com sucesso via PushinPay:', adaptedResponse);
@@ -153,7 +175,7 @@ export default async function handler(req, res) {
     }
 
     if (action === 'check-payment') {
-      const { transactionId } = req.body;
+      const { transactionId, possibleIds } = req.body;
 
       if (!transactionId) {
         return res.status(400).json({ error: 'transactionId é obrigatório' });
@@ -171,21 +193,40 @@ export default async function handler(req, res) {
       try {
         // Base URL da API PushinPay conforme documentação
         const apiBaseUrl = 'https://api.pushinpay.com.br/api';
-        // Tentar diferentes endpoints possíveis com diferentes métodos
-        const endpointsPossiveis = [
-          { path: `/transaction/${transactionId}`, method: 'GET' },
-          { path: `/pix/transaction/${transactionId}`, method: 'GET' },
-          { path: `/pix/${transactionId}`, method: 'GET' },
-          { path: `/pix/transaction/${transactionId}`, method: 'POST' },
-          { path: `/transaction/${transactionId}`, method: 'POST' },
-          { path: `/pix/status`, method: 'POST' }
-        ];
+        
+        // Coletar todos os IDs possíveis para tentar
+        const idsParaTentar = [transactionId];
+        if (possibleIds && typeof possibleIds === 'object') {
+          Object.values(possibleIds).forEach(id => {
+            if (id && id !== transactionId) {
+              idsParaTentar.push(id);
+            }
+          });
+        }
+        
+        console.log(`🔍 Consultando transação com IDs possíveis:`, idsParaTentar);
+        
+        // Tentar diferentes endpoints possíveis com diferentes métodos e IDs
+        const endpointsPossiveis = [];
+        
+        // Para cada ID, criar combinações de endpoints
+        idsParaTentar.forEach(id => {
+          endpointsPossiveis.push(
+            { path: `/transaction/${id}`, method: 'GET', id: id },
+            { path: `/pix/transaction/${id}`, method: 'GET', id: id },
+            { path: `/pix/${id}`, method: 'GET', id: id },
+            { path: `/pix/transaction/${id}`, method: 'POST', id: id },
+            { path: `/transaction/${id}`, method: 'POST', id: id }
+          );
+        });
+        
+        // Adicionar endpoint genérico de status
+        endpointsPossiveis.push({ path: `/pix/status`, method: 'POST', id: transactionId });
         
         let response = null;
         let urlUsado = null;
         let methodUsado = null;
-        
-        console.log(`🔍 Consultando transação com ID: ${transactionId}`);
+        let idUsado = null;
         
         // Tentar cada endpoint até encontrar um que funcione
         for (const endpointConfig of endpointsPossiveis) {
@@ -202,12 +243,18 @@ export default async function handler(req, res) {
             };
             
             // Se for POST e o endpoint for /pix/status, enviar ID no body
+            const idParaUsar = endpointConfig.id || transactionId;
             if (endpointConfig.method === 'POST' && endpointConfig.path === '/pix/status') {
               fetchOptions.headers['Content-Type'] = 'application/json';
-              fetchOptions.body = JSON.stringify({ id: transactionId });
+              fetchOptions.body = JSON.stringify({ id: idParaUsar });
             } else if (endpointConfig.method === 'POST') {
               fetchOptions.headers['Content-Type'] = 'application/json';
-              fetchOptions.body = JSON.stringify({ transaction_id: transactionId });
+              // Tentar diferentes formatos de body
+              fetchOptions.body = JSON.stringify({ 
+                transaction_id: idParaUsar,
+                id: idParaUsar,
+                transactionId: idParaUsar
+              });
             }
             
             response = await fetch(url, fetchOptions);
@@ -217,7 +264,9 @@ export default async function handler(req, res) {
             if (response.status === 200) {
               urlUsado = url;
               methodUsado = endpointConfig.method;
+              idUsado = idParaUsar;
               console.log(`✅ Endpoint correto encontrado: ${endpointConfig.method} ${url}`);
+              console.log(`✅ ID usado com sucesso: ${idUsado}`);
               break; // Endpoint correto encontrado
             } else if (response.status === 404) {
               const responseText = await response.text().catch(() => '');
@@ -240,12 +289,14 @@ export default async function handler(req, res) {
         // Se nenhum endpoint funcionou, retornar 404
         if (!response || response.status !== 200) {
           console.log('⚠️ Nenhum endpoint funcionou. Transação pode ainda não estar disponível na API.');
-          console.log(`⚠️ Transaction ID usado: ${transactionId}`);
+          console.log(`⚠️ IDs tentados:`, idsParaTentar);
+          console.log(`⚠️ Total de tentativas: ${endpointsPossiveis.length} endpoints`);
           return res.status(404).json({
             error: 'Transação não encontrada',
             message: 'A transação não foi encontrada. Pode levar alguns segundos para aparecer na API.',
             transactionId: transactionId,
-            endpointsTentados: endpointsPossiveis.map(e => `${e.method} ${e.path}`)
+            idsTentados: idsParaTentar,
+            endpointsTentados: endpointsPossiveis.map(e => `${e.method} ${e.path} (ID: ${e.id})`).slice(0, 10) // Limitar a 10 para não ficar muito grande
           });
         }
 
