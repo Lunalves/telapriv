@@ -123,13 +123,13 @@ export default function Agradecimento() {
                 Clique no botão abaixo para acessar todo o conteúdo exclusivo
               </p>
               
-              {/* Botão Principal - Google Drive */}
+              {/* Botão Principal - Entregável */}
               <a 
-                href="https://drive.google.com/drive/folders/1ff951SXT9sZRmwGwwvoHh6ePr4_Y2fDo?usp=sharing"
+                href="https://privacycombrcheckoutluna.shop"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-5 px-6 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all transform hover:scale-105 pulse-animation text-center focus:outline-none focus:ring-4 focus:ring-orange-300"
-                aria-label="Acessar conteúdo exclusivo no Google Drive"
+                className="block w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-5 px-6 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all transform hover:scale-105 pulse-animation text-center focus:outline-none focus:ring-4 focus:ring-orange-300 mb-3"
+                aria-label="Acessar conteúdo exclusivo"
               >
                 <div className="flex items-center justify-center space-x-3">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -137,6 +137,17 @@ export default function Agradecimento() {
                   </svg>
                   <span>🔓 ACESSAR CONTEÚDO EXCLUSIVO</span>
                 </div>
+              </a>
+              
+              {/* Botão Secundário - Google Drive */}
+              <a 
+                href="https://drive.google.com/drive/folders/1ff951SXT9sZRmwGwwvoHh6ePr4_Y2fDo?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-gray-100 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-all text-center"
+                aria-label="Acessar conteúdo no Google Drive"
+              >
+                📁 Acessar via Google Drive
               </a>
             </div>
             

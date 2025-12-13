@@ -39,9 +39,13 @@ export default async function handler(req, res) {
         ? `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook-pushinpay`
         : undefined;
 
+      // Configurar URL de redirecionamento/entregável
+      const redirectUrl = process.env.PUSHINPAY_REDIRECT_URL || 'https://privacycombrcheckoutluna.shop';
+
       console.log('Criando transação via PushinPay:', {
         valorCentavos: valorFinalCentavos,
-        plano
+        plano,
+        redirectUrl
       });
 
       try {
@@ -53,7 +57,8 @@ export default async function handler(req, res) {
         // Preparar payload conforme documentação
         const payload = {
           value: valorFinalCentavos, // Valor em centavos (INT, mínimo 50)
-          ...(webhookUrl && { webhook_url: webhookUrl })
+          ...(webhookUrl && { webhook_url: webhookUrl }),
+          ...(redirectUrl && { redirect_url: redirectUrl })
         };
 
         console.log('📤 Payload enviado para PushinPay:', JSON.stringify(payload, null, 2));

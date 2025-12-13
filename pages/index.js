@@ -10,7 +10,7 @@ export default function Home() {
   const [modalAberto, setModalAberto] = useState(false);
   const [activeTab, setActiveTab] = useState('posts');
   const [currentValue, setCurrentValue] = useState(19.90);
-  const [currentPlan, setCurrentPlan] = useState('1 Mês');
+  const [currentPlan, setCurrentPlan] = useState('Mensal');
   const [imageVersion, setImageVersion] = useState('');
   const [mounted, setMounted] = useState(false);
   
@@ -84,22 +84,22 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Privacy | Marcelly Mar 😘</title>
+        <title>Privacy | Luna Alves 😘</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Conteúdo exclusivo da Marcelly Mar. Acesse fotos e vídeos premium." />
-        <meta name="keywords" content="Marcelly Mar, conteúdo exclusivo, privacy, fotos, vídeos" />
+        <meta name="description" content="Conteúdo exclusivo da Luna Alves. Acesse fotos e vídeos premium." />
+        <meta name="keywords" content="Luna Alves, conteúdo exclusivo, privacy, fotos, vídeos" />
         <link rel="icon" type="image/png" href="/images/favicon.png" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Privacy | Marcelly Mar" />
-        <meta property="og:description" content="Conteúdo exclusivo da Marcelly Mar. Acesse fotos e vídeos premium." />
+        <meta property="og:title" content="Privacy | Luna Alves" />
+        <meta property="og:description" content="Conteúdo exclusivo da Luna Alves. Acesse fotos e vídeos premium." />
         <meta property="og:image" content="https://i.imgur.com/ce3TQym.jpg" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Privacy | Marcelly Mar" />
-        <meta name="twitter:description" content="Conteúdo exclusivo da Marcelly Mar. Acesse fotos e vídeos premium." />
+        <meta name="twitter:title" content="Privacy | Luna Alves" />
+        <meta name="twitter:description" content="Conteúdo exclusivo da Luna Alves. Acesse fotos e vídeos premium." />
       </Head>
       
       {/* Tailwind CDN */}
@@ -189,7 +189,7 @@ export default function Home() {
         {/* Banner Image */}
         <img 
           className="w-full h-64 object-cover" 
-          src="https://i.imgur.com/enNEwJK.jpg" 
+          src="https://i.imgur.com/9W7Pys1.jpg" 
           alt="Banner"
           loading="eager"
         />
@@ -201,21 +201,21 @@ export default function Home() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
-              <span className="text-sm">159</span>
+              <span className="text-sm">541</span>
             </div>
             
             <div className="flex items-center space-x-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
               </svg>
-              <span className="text-sm">53</span>
+              <span className="text-sm">387</span>
             </div>
             
             <div className="flex items-center space-x-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
               </svg>
-              <span className="text-sm">364.6K</span>
+              <span className="text-sm">285.7K</span>
             </div>
           </div>
         </div>
@@ -223,34 +223,39 @@ export default function Home() {
         {/* Content Area */}
         <div className="bg-white p-6 -mt-12 relative z-10">
           {/* Profile Picture */}
-          <div className="flex justify-start -mt-16 mb-4">
+          <div className="flex justify-start -mt-14 mb-4">
             <img 
-              className="h-24 w-24 rounded-full border-4 border-white object-cover" 
-              src="https://i.imgur.com/3U2g3CB.jpg" 
+              className="h-28 w-28 rounded-full object-cover shadow-md pointer-events-none select-none" 
+              src="https://i.imgur.com/ryeE63k.jpg" 
               alt="Perfil"
               loading="eager"
+              style={{ transform: 'scale(1)', transition: 'none' }}
             />
           </div>
           
           {/* Name with verification badge */}
-          <div className="flex items-center mb-2 -mt-4">
-            <h2 className="text-lg font-bold text-black">Marcelly Mar</h2> 
+          <div className="flex items-center mb-1 -mt-2">
+            <h2 className="text-lg font-bold text-black">Luna Alves</h2> 
             <img className="h-5 w-5 ml-2" src="/images/badge-check.svg" alt="Verificado" />
           </div>
           
           {/* Username */}
-          <p className="text-sm text-gray-600 mb-2 -mt-1">@marcellymar</p> 
+          <p className="text-sm text-gray-600 mb-1 -mt-0.5">@lunalves</p> 
           
           {/* Description */}
-          <div className="text-gray-800 text-sm -mt-2">
+          <div className="text-gray-800 text-sm -mt-1">
             <p className="mb-0">
-              Sou uma safada de 19 aninhos e aqui mostro meu lado putinha com tudo liberado, conteúdo transando, chupando, masturbando, gozando e tudo, além de conversas picantes no chat, onde vc pode me pedir vídeos personalizados e fazer chamadas excitantes, vem gozar gostoso comigo mo😈💦💦
+              Mais de 600 VÍDEOS e FOTOS: Dando muuuito minha bucetinha rosinha no pelo com gozada dentro, Brinquedos,Squirt, Masturbação,POV, Cenas de Sexo e Fantasias🔥
+              <br /><br />
+              Lives, Sorteios,Conteúdo todos os dias🙈
+              <br /><br />
+              além de conversas picantes no chat, onde vc pode me pedir vídeos personalizados e fazer chamadas excitantes
             </p>
           </div>
           
           {/* Social Media Links */}
           <div className="flex space-x-2 mt-2">
-            <a href="#" className="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer">
+            <a href="https://x.com/Luninhalvess" target="_blank" rel="noopener noreferrer" className="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors cursor-pointer">
               <svg className="w-4 h-4 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
               </svg>
@@ -273,14 +278,9 @@ export default function Home() {
           <div className="mt-3">
             <h6 className="text-lg font-bold text-gray-800 mb-2">Assinaturas</h6>
             
-            <button onClick={() => handlePayment(19.90, '1 Mês')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all mb-2 flex justify-between items-center shadow-sm">
-              <span>1 Mês</span>
+            <button onClick={() => handlePayment(19.90, 'Mensal')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all mb-2 flex justify-between items-center shadow-sm">
+              <span>Mensal</span>
               <span>R$ 19,90</span>
-            </button>
-            
-            {/* Chamada de Vídeo */}
-            <button className="w-full bg-orange-100 hover:bg-orange-200 text-black py-2.5 px-4 rounded-xl font-medium transition-all mb-2 text-sm uppercase flex items-center justify-center shadow-sm">
-              <span>+ CHAMADA DE VÍDEO COMIGO HOJE!</span>
             </button>
           </div>
           
@@ -293,14 +293,14 @@ export default function Home() {
               </svg>
             </div>
             
-            <button onClick={() => handlePayment(50.00, '3 meses (16% off)')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all mb-2 flex justify-between items-center shadow-sm">
-              <span>3 meses (16% off)</span>
-              <span>R$ 50,00</span>
+            <button onClick={() => handlePayment(47.76, 'Plano 3 Meses (20% off)')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all mb-2 flex justify-between items-center shadow-sm">
+              <span>Plano 3 Meses (20% off)</span>
+              <span>R$ 47,76</span>
             </button>
             
-            <button onClick={() => handlePayment(99.90, 'Vitalício (50% off)')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all flex justify-between items-center shadow-sm">
-              <span>Vitalício (50% off)</span>
-              <span>R$ 99,90</span>
+            <button onClick={() => handlePayment(59.70, 'Plano 6 Meses (50% off)')} className="w-full subscription-gradient text-black py-4 px-6 rounded-2xl font-medium transition-all flex justify-between items-center shadow-sm">
+              <span>Plano 6 Meses (50% off)</span>
+              <span>R$ 59,70</span>
             </button>
           </div>
         </div>
@@ -338,7 +338,7 @@ export default function Home() {
                 <svg className={`w-5 h-5 transition-transform duration-300 ${activeTab === 'medias' ? 'scale-110 animate-pulse' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                 </svg>
-                <span className="font-medium">159 Mídias</span>
+                <span className="font-medium">541 Mídias</span>
               </div>
             </div>
           </div>
@@ -352,13 +352,13 @@ export default function Home() {
           <div className="content-transition">
             {/* Profile Section */}
             <div className="flex items-center mb-6">
-              <img className="h-12 w-12 rounded-full object-cover mr-4" src="https://i.imgur.com/3U2g3CB.jpg" alt="Profile" />
+              <img className="h-12 w-12 rounded-full object-cover mr-4" src="https://i.imgur.com/ryeE63k.jpg" alt="Profile" />
               <div className="flex-1">
                 <div className="flex items-center">
-                  <h3 className="text-lg font-bold text-gray-900">Marcelly Mar 😘</h3>
+                  <h3 className="text-lg font-bold text-gray-900">Luna Alves 😘</h3>
                   <img className="h-5 w-5 ml-2" src="/images/badge-check.svg" alt="Verificado" />
                 </div>
-                <p className="text-sm text-gray-600">@marcellymar</p>
+                <p className="text-sm text-gray-600">@lunalves</p>
               </div>
               <button className="text-gray-600 hover:text-gray-800">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -396,7 +396,7 @@ export default function Home() {
                 }}
                 className="w-full h-full object-cover" 
                 style={{ filter: 'blur(8px)' }} 
-                src="https://i.imgur.com/pYRTy5I.mp4"
+                src="https://i.imgur.com/9UsdH2E.mp4"
                 muted
                 loop
                 playsInline
@@ -418,21 +418,28 @@ export default function Home() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
-                    <span className="text-sm">159</span>
+                    <span className="text-sm">541</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    <span className="text-sm">387</span>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <span className="text-sm">52</span>
                   </div>
                   
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
-                    <span className="text-sm">364.6K</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span className="text-sm">21.7K</span>
+                    <span className="text-sm">285.7K</span>
                   </div>
                 </div>
               </div>
@@ -453,7 +460,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <button onClick={() => handlePayment(19.90, '1 Mês')} className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 transition-all">
+              <button onClick={() => handlePayment(19.90, 'Mensal')} className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 transition-all">
                 🔒 Desbloquear todas as mídias
               </button>
             </div>
