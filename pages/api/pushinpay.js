@@ -178,7 +178,6 @@ export default async function handler(req, res) {
           `/pix/${transactionId}`
         ];
         
-        let statusData = null;
         let response = null;
         let urlUsado = null;
         
