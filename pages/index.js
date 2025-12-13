@@ -189,7 +189,7 @@ export default function Home() {
         {/* Banner Image */}
         <img 
           className="w-full h-64 object-cover" 
-          src="https://i.imgur.com/9W7Pys1.jpg" 
+          src="https://i.imgur.com/ZewY5tz.jpg" 
           alt="Banner"
           loading="eager"
         />
