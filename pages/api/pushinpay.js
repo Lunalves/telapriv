@@ -8,6 +8,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
+  // Timeout geral de 30 segundos para evitar requisições travadas
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(408).json({ 
+        error: 'Request Timeout',
+        message: 'A requisição demorou muito para ser processada'
+      });
+    }
+  }, 30000); // 30 segundos
+
   const { action } = req.body;
 
   try {
@@ -162,10 +172,12 @@ export default async function handler(req, res) {
 
         console.log('✅ Transação criada com sucesso via PushinPay:', adaptedResponse);
         
+        clearTimeout(timeout);
         return res.status(200).json(adaptedResponse);
       } catch (error) {
         console.error('❌ Erro ao criar PIX via PushinPay:', error);
         
+        clearTimeout(timeout);
         return res.status(500).json({
           error: error.message || 'Erro ao criar PIX',
           message: error.message || 'Erro ao criar PIX',
@@ -234,12 +246,17 @@ export default async function handler(req, res) {
           console.log(`🔍 Tentando consultar status na PushinPay: ${endpointConfig.method} ${url}`);
           
           try {
+            // Criar AbortController para timeout individual de 5 segundos por endpoint
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos por endpoint
+            
             const fetchOptions = {
               method: endpointConfig.method,
               headers: {
                 'Authorization': `Bearer ${apiToken}`,
                 'Accept': 'application/json'
-              }
+              },
+              signal: controller.signal
             };
             
             // Se for POST e o endpoint for /pix/status, enviar ID no body
@@ -258,6 +275,7 @@ export default async function handler(req, res) {
             }
             
             response = await fetch(url, fetchOptions);
+            clearTimeout(timeoutId); // Limpar timeout se a requisição completou
 
             console.log(`📥 Status da resposta HTTP (${endpointConfig.method} ${endpointConfig.path}):`, response.status, response.statusText);
 
@@ -281,7 +299,12 @@ export default async function handler(req, res) {
               continue;
             }
           } catch (fetchError) {
-            console.error(`❌ Erro ao consultar ${endpointConfig.method} ${endpointConfig.path}:`, fetchError.message);
+            // Tratar timeout especificamente
+            if (fetchError.name === 'AbortError' || fetchError.name === 'TimeoutError') {
+              console.log(`⏱️ Timeout ao consultar ${endpointConfig.method} ${endpointConfig.path} (5s) - tentando próximo endpoint...`);
+            } else {
+              console.error(`❌ Erro ao consultar ${endpointConfig.method} ${endpointConfig.path}:`, fetchError.message);
+            }
             continue; // Tentar próximo endpoint
           }
         }
@@ -291,6 +314,7 @@ export default async function handler(req, res) {
           console.log('⚠️ Nenhum endpoint funcionou. Transação pode ainda não estar disponível na API.');
           console.log(`⚠️ IDs tentados:`, idsParaTentar);
           console.log(`⚠️ Total de tentativas: ${endpointsPossiveis.length} endpoints`);
+          clearTimeout(timeout);
           return res.status(404).json({
             error: 'Transação não encontrada',
             message: 'A transação não foi encontrada. Pode levar alguns segundos para aparecer na API.',
@@ -345,10 +369,12 @@ export default async function handler(req, res) {
           data: statusData
         };
         
+        clearTimeout(timeout);
         return res.status(200).json(adaptedResponse);
       } catch (error) {
         console.error('Erro ao consultar transação na PushinPay:', error);
         
+        clearTimeout(timeout);
         return res.status(500).json({
           error: 'Erro ao verificar pagamento',
           message: error.message || 'Erro ao verificar pagamento',
@@ -357,11 +383,13 @@ export default async function handler(req, res) {
       }
     }
 
+    clearTimeout(timeout);
     return res.status(400).json({
       error: 'Ação inválida',
       message: 'Ação inválida'
     });
   } catch (error) {
+    clearTimeout(timeout);
     console.error('Erro na API PushinPay:', error);
     return res.status(500).json({
       error: error.message || 'Erro interno do servidor',
