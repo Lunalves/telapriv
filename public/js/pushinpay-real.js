@@ -353,21 +353,23 @@ const PushinPayReal = {
           // Verificar se é 404 da rota (não encontrada) ou da API
           if (response.status === 404) {
             const errorText = await response.text().catch(() => '');
-            console.error('❌ 404 - Rota não encontrada ou transação não existe:', errorText);
             
-            // Se for 404 da rota (não da API), pode ser problema de deploy
+            // Se for 404 da API - transação ainda não existe (comportamento esperado)
             if (errorText.includes('Transação não encontrada') || errorText.includes('transactionId')) {
-              // É 404 da API - transação ainda não existe
+              // É 404 da API - transação ainda não existe (NORMAL, não é erro)
               if (tentativas <= 10) {
                 console.log(`⏳ Transação ainda não encontrada na API (tentativa ${tentativas}/10 - aguardando propagação)...`);
+              } else if (tentativas <= 30) {
+                console.log(`⏳ Aguardando pagamento... (tentativa ${tentativas})`);
               } else {
-                console.warn(`⚠️ Transação ainda não encontrada após ${tentativas} tentativas. Continuando verificação...`);
+                console.log(`⏳ Aguardando pagamento... (tentativa ${tentativas}/300)`);
               }
               ultimaConsulta = Date.now();
               return;
             } else {
-              // É 404 da rota - problema mais sério
+              // É 404 da rota - problema mais sério (ERRO REAL)
               console.error('❌ ERRO CRÍTICO: Rota /api/pushinpay não encontrada no servidor!');
+              console.error('❌ Resposta recebida:', errorText);
               this.atualizarStatus('❌ Erro: Rota não encontrada. Recarregue a página.', true);
               this.pararVerificacao();
               return;
@@ -392,9 +394,15 @@ const PushinPayReal = {
             status = 'pending';
           }
           
-          console.log('📊 Resposta completa da API:', data);
-          console.log('📊 Status do pagamento PushinPay:', status);
-          console.log('📊 TransactionData:', transactionData);
+          // Log apenas se não for pending (para não poluir o console)
+          if (status !== 'pending') {
+            console.log('📊 Resposta completa da API:', data);
+            console.log('📊 Status do pagamento PushinPay:', status);
+            console.log('📊 TransactionData:', transactionData);
+          } else if (tentativas % 10 === 0) {
+            // Log a cada 10 tentativas quando estiver pending
+            console.log(`⏳ Aguardando pagamento... (verificação ${tentativas}/300)`);
+          }
 
           const isPagamentoConfirmado = status === 'paid' || status === 'approved' || status === 'confirmed';
 
