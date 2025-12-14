@@ -35,8 +35,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // SEGUNDO: Se não estiver no cache confirmado, consultar API PushinPay como fallback
-    console.log(`🔍 Cache não tem confirmação para ${transactionId} - consultando API PushinPay como fallback...`);
+    // SEGUNDO: SEMPRE consultar API PushinPay como fallback (cache não persiste no Vercel serverless)
+    // Isso garante que mesmo se o webhook atualizou mas o cache não persistiu, ainda detectamos o pagamento
+    console.log(`🔍 Consultando API PushinPay para ${transactionId} (cache não tem confirmação ou não persistiu)...`);
     
     const apiToken = process.env.PUSHINPAY_TOKEN;
     if (!apiToken) {
@@ -50,48 +51,85 @@ export default async function handler(req, res) {
       });
     }
 
-    // Tentar consultar a API PushinPay
+    // Tentar consultar a API PushinPay - tentar múltiplos endpoints e formatos de ID
     const apiBaseUrl = 'https://api.pushinpay.com.br/api';
-    const endpointsPossiveis = [
-      { path: `/transaction/${transactionId}`, method: 'GET' },
-      { path: `/pix/transaction/${transactionId}`, method: 'GET' },
-      { path: `/pix/${transactionId}`, method: 'GET' }
+    
+    // Normalizar transactionId (pode vir em diferentes formatos)
+    const idsParaTentar = [
+      transactionId,
+      transactionId.toUpperCase(),
+      transactionId.toLowerCase()
     ];
+    
+    const endpointsPossiveis = [];
+    idsParaTentar.forEach(id => {
+      endpointsPossiveis.push(
+        { path: `/transaction/${id}`, method: 'GET', id: id },
+        { path: `/pix/transaction/${id}`, method: 'GET', id: id },
+        { path: `/pix/${id}`, method: 'GET', id: id },
+        { path: `/pix/transaction/${id}`, method: 'POST', id: id },
+        { path: `/transaction/${id}`, method: 'POST', id: id }
+      );
+    });
+    
+    // Adicionar endpoint genérico de status
+    endpointsPossiveis.push({ path: `/pix/status`, method: 'POST', id: transactionId });
 
     for (const endpointConfig of endpointsPossiveis) {
       try {
         const url = `${apiBaseUrl}${endpointConfig.path}`;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos por endpoint
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos por endpoint
 
-        const response = await fetch(url, {
+        const fetchOptions = {
           method: endpointConfig.method,
           headers: {
             'Authorization': `Bearer ${apiToken}`,
             'Accept': 'application/json'
           },
           signal: controller.signal
-        });
+        };
 
+        // Se for POST, adicionar body
+        const idParaUsar = endpointConfig.id || transactionId;
+        if (endpointConfig.method === 'POST' && endpointConfig.path === '/pix/status') {
+          fetchOptions.headers['Content-Type'] = 'application/json';
+          fetchOptions.body = JSON.stringify({ id: idParaUsar });
+        } else if (endpointConfig.method === 'POST') {
+          fetchOptions.headers['Content-Type'] = 'application/json';
+          fetchOptions.body = JSON.stringify({ 
+            transaction_id: idParaUsar,
+            id: idParaUsar,
+            transactionId: idParaUsar
+          });
+        }
+
+        const response = await fetch(url, fetchOptions);
         clearTimeout(timeoutId);
+
+        console.log(`📥 Resposta ${endpointConfig.method} ${endpointConfig.path}:`, response.status);
 
         if (response.status === 200) {
           const statusData = await response.json();
           
-          // Extrair status
-          let status = (statusData.status || statusData.payment_status || 'pending')?.toLowerCase();
-          const hasPaidAt = statusData.paid_at || statusData.payment_date;
+          console.log(`📊 Dados recebidos da API PushinPay:`, JSON.stringify(statusData, null, 2));
           
-          // Se tiver paid_at, considerar como pago
-          if (hasPaidAt && (status === 'pending' || status === 'created')) {
+          // Extrair status de múltiplos campos
+          let status = (statusData.status || statusData.payment_status || statusData.state || 'pending')?.toLowerCase();
+          const hasPaidAt = statusData.paid_at || statusData.payment_date || statusData.paidAt;
+          const hasEndToEndId = statusData.end_to_end_id; // Se tiver end_to_end_id, foi pago
+          
+          // Se tiver paid_at ou end_to_end_id, considerar como pago
+          if ((hasPaidAt || hasEndToEndId) && (status === 'pending' || status === 'created')) {
+            console.log(`🔍 Detectado paid_at ou end_to_end_id - considerando como pago`);
             status = 'paid';
           }
 
-          const isPaid = status === 'paid' || status === 'approved' || status === 'confirmed' || status === 'pago' || hasPaidAt;
+          const isPaid = status === 'paid' || status === 'approved' || status === 'confirmed' || status === 'pago' || hasPaidAt || hasEndToEndId;
 
-          console.log(`📊 Status da API PushinPay para ${transactionId}:`, status, isPaid ? '(PAGO!)' : '(pendente)');
+          console.log(`📊 Status final para ${transactionId}:`, status, isPaid ? '✅ (PAGO!)' : '⏳ (pendente)');
 
-          // Salvar no cache para próximas consultas
+          // Salvar no cache para próximas consultas (mesmo que não persista, tenta)
           if (isPaid) {
             global.paymentStatus[transactionId] = {
               status: 'paid',
@@ -99,9 +137,12 @@ export default async function handler(req, res) {
               confirmedAt: new Date().toISOString(),
               amount: statusData.value || statusData.amount,
               paidAt: hasPaidAt,
+              endToEndId: hasEndToEndId,
               source: 'api-fallback',
-              originalStatus: status
+              originalStatus: status,
+              data: statusData
             };
+            console.log(`💾 Status salvo no cache:`, global.paymentStatus[transactionId]);
           }
 
           return res.status(200).json({
@@ -111,11 +152,18 @@ export default async function handler(req, res) {
             confirmed: isPaid,
             amount: statusData.value || statusData.amount,
             paidAt: hasPaidAt,
+            endToEndId: hasEndToEndId,
             data: statusData
           });
+        } else if (response.status === 404) {
+          // 404 é esperado - transação pode não estar disponível ainda
+          console.log(`⚠️ Endpoint ${endpointConfig.path} retornou 404 - tentando próximo...`);
+          continue;
         }
       } catch (fetchError) {
-        if (fetchError.name !== 'AbortError') {
+        if (fetchError.name === 'AbortError') {
+          console.log(`⏱️ Timeout ao consultar ${endpointConfig.path}`);
+        } else {
           console.log(`⚠️ Erro ao consultar ${endpointConfig.path}:`, fetchError.message);
         }
         continue;
